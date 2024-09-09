@@ -1,46 +1,63 @@
-//This code is to control the speed of a DC motor by a potentiometer using l298n driver
-//We read the value from the analog input, calibrate it then inject to the module
-//Refer to Surtrtech youtube channel for more information
-// Source: instructables.com/Control-DC-Motor-Speed-Using-Potentiometer-L298n-A/
+// Ansteuern von 2 DC-Motoren mit einem L298N Motor Shield
+// Die Drehrichtung der Motoren wird über die Beschaltung der IN1/IN2-Eingänge (Motor A)
+// bzw. IN3/IN4-Eingänge bestimmt
+// Die Geschwindigkeit wird als PWM Signal an den Eingängen ENA und ENB geregetl
+// wird ENA und ENB mit den Jumpern auf dem Motor Shield auf +5V gelegt, laufen
+// die Motoren immer mit voller Geschwindigkeit (keine Regelung, 100% PWM)
+
+// Das Potentiometer wird an Pin A0 angeschlossen, um die Drehzahl zu regulieren
 #define POTI_PIN A0
 
-int in1 = 3; //Declaring where our module is wired
-int in2 = 4;
-int ConA = 2;// Don't forget this is a PWM DI/DO
+// Motor A
+const int ENA = 2; // GPIO muss PWM-fähig sein
+const int IN1 = 3;
+const int IN2 = 4;
 
-int in3 = 5; //Declaring where our module is wired
-int in4 = 6;
-int ConB = 12;// Don't forget this is a PWM DI/DO
+// Motor B
+const int IN3 = 5;
+const int IN4 = 6;
+const int ENB = 7; // GPIO muss PWM-fähig sein
+
 int speed;
 
-#define POTI_PIN A0
-
 void setup() {
-  // poti
-  pinMode( POTI_PIN, INPUT );
+  // Serielle Ausgabe der Geschwindigkeit an den PC
   Serial.begin(115200);
+  
+  // Potentiometer
+  pinMode( POTI_PIN, INPUT );
+  
   // Motor
-  pinMode(in1, OUTPUT);
-  pinMode(in2, OUTPUT);  
-  pinMode(ConA, OUTPUT);
-}
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);  
+  pinMode(ENA, OUTPUT);
 
-void TurnMotorA(int speed){ //We create a function which control the direction and speed
-  digitalWrite(in1, LOW); //Switch between this HIGH and LOW to change direction
-  digitalWrite(in2, HIGH);
-  analogWrite(ConA,speed);// Then inject it to our motor
-}
-
-void TurnMotorB(int speed){ //We create a function which control the direction and speed
-  digitalWrite(in3, LOW); //Switch between this HIGH and LOW to change direction
-  digitalWrite(in4, HIGH);
-  analogWrite(ConB,255-speed);// Then inject it to our motor
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);  
+  pinMode(ENB, OUTPUT);
 }
 
 void loop() {
   int potiWert = analogRead( POTI_PIN );
-  speed = potiWert*0.2492668622; //We read thea analog value from the potentiometer calibrate it
-  TurnMotorA(speed); //one function that keeps looping you can add another one with different direction or stop
-  TurnMotorB(speed); //one function that keeps looping you can add another one with different direction or stop
+  
+   // analogen Poti-Wert (0...1023) in PWM-Signal (0....255) umrechnen
+  speed = map(potiWert, 0, 1023, 0, 255);
   Serial.println("Speed: " + String( speed ));
+  
+  TurnMotorA(); 
+  TurnMotorB();
+}
+
+void TurnMotorA() {
+  // Drehrichtung und Geschwindigkeit für Motor A setzen
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+  analogWrite(ENA, speed);
+}
+
+void TurnMotorB() {
+  // Drehrichtung und Geschwindigkeit für Motor B setzen
+  digitalWrite(IN3, HIGH); // Drehrichtung invers zu Motor A
+  digitalWrite(IN4, LOW);
+  analogWrite(ENB, 255-speed); // Geschwindigkeit invers zu Motor A
 }
